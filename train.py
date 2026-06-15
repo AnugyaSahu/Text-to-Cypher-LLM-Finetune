@@ -81,9 +81,5 @@ def train():
     model.save_pretrained(config.output_dir)
     tokenizer.save_pretrained(config.output_dir)
 
-    print("Pushing to HuggingFace Hub...")
-    model.push_to_hub(config.hub_model_name)
-    tokenizer.push_to_hub(config.hub_model_name)
-
 if __name__ == "__main__":
     train()
