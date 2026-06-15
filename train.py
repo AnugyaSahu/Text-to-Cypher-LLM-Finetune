@@ -23,9 +23,9 @@ def load_model(config: Config):
     """Loads the pre-trained model from Hugging Face Transformers library"""
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name,
-        dtype=torch.float16,
+        dtype=torch.float32,
     )
-    model = model.to("mps")
+    model = model.to("cuda")
     print(f"Model device: {next(model.parameters()).device}")
     return model
 
@@ -44,7 +44,7 @@ def get_training_args(config: Config):
         # if training overfits, load the best model at the end 
         load_best_model_at_end=True,
         logging_steps=50,
-        bf16=True,
+        fp16=False,
     )
 
 def train():
