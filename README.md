@@ -41,6 +41,24 @@ Two metrics used deliberately:
 - Token F1 doesn't understand Cypher syntax — high score can still be a broken query
 - Gold standard would be execution accuracy against a live DB — not feasible without data infrastructure
 
+## Demo App
+
+A simple Streamlit app to interact with the model.
+
+```bash
+pip install streamlit
+streamlit run app.py
+```
+
+### Features
+- **Try it yourself** — enter any schema and question, get a generated Cypher query. Optionally paste ground truth to see Exact Match and Token F1 scores.
+- **Test set examples** — load 3 random examples from the test set with ground truth vs predicted Cypher side by side, with metrics.
+
+### Example
+Schema: `Movie {title, year}, Person {name}, (Person)-[:DIRECTED]->(Movie)`  
+Question: `Which movies did Christopher Nolan direct before 2010?`  
+Generated: `MATCH (p:Person {name: 'Christopher Nolan'})-[:DIRECTED]->(m:Movie) WHERE m.year < 2010 RETURN m.title`
+
 ## Design Decisions and Limitations
 
 **Full fine-tune over LoRA:**
