@@ -22,7 +22,7 @@ class Config:
 
     # M2 GPU
     torch_threads: int = 4
-    device: str = "cuda"        # use M2 GPU instead of CPU
+    device: str = "cuda"   
 
     # Output
     output_dir: str = "./my-model"
