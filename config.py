@@ -18,11 +18,11 @@ class Config:
     learning_rate: float = 2e-4
     num_epochs: int = 5
     batch_size: int = 8
-    max_length: int = 512     # increase for complex schemas
+    max_length: int = 512   
 
     # M2 GPU
     torch_threads: int = 4
-    device: str = "mps"        # use M2 GPU instead of CPU
+    device: str = "mps"        
 
     # Output
     output_dir: str = "./my-model"
