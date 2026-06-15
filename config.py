@@ -11,7 +11,7 @@ class Config:
     # Dataset
     dataset_name: str = "RomanTeucher/text2cypher-curated"
     train_split: str = "train"
-    val_split: str = "validation"
+    val_split: str = "val"
     test_split: str = "test"
 
     # Training

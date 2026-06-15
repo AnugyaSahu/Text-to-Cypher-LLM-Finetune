@@ -6,7 +6,7 @@ from transformers import (
     TrainingArguments,
     Trainer,
     # Data collator to dynamically pad sequences in each batch (CPU optimization)
-    DataCollatorForSeq2Seq
+    DataCollatorForLanguageModeling
 )
 from config import Config
 from data import get_tokenized_dataset
@@ -20,7 +20,7 @@ def load_model(config: Config):
     """Loads the pre-trained model from Hugging Face Transformers library"""
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name,
-        torch_dtype=torch.float32,  #float32 for CPU training (CPU optimization)
+        dtype=torch.float32,  #float32 for CPU training (CPU optimization)
     )
     return model
 
@@ -32,14 +32,14 @@ def get_training_args(config: Config):
         per_device_eval_batch_size=config.batch_size,
         learning_rate=config.learning_rate,
         # evaluate after every epoch
-        evaluation_strategy="epoch",  
+        eval_strategy="epoch",  
         # save checkpoint every epoch
         save_strategy="epoch",   
         # if training overfits, load the best model at the end 
         load_best_model_at_end=True,
         logging_steps=50,
         fp16=False,    
-        no_cuda=True # just CPU training, no GPU
+        use_cpu=True # just CPU training, no GPU
     )
 
 def train():
@@ -59,19 +59,18 @@ def train():
     print("Loading model...")
     model = load_model(config)
 
-    data_collator = DataCollatorForSeq2Seq(
+    data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
-        model=model,
-        # pad dynamically per batch to save memory (CPU optimization)
-        padding=True  
+        mlm=False,  #doing causal language modeling
+        # padding automatically dynamically per batch to save memory (CPU optimization)
     )
 
     trainer = Trainer(
         model=model,
         args=get_training_args(config),
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["validation"],
-        tokenizer=tokenizer,
+        train_dataset=dataset[config.train_split],
+        eval_dataset=dataset[config.val_split],
+        processing_class=tokenizer,
         data_collator=data_collator,
     )
 

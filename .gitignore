@@ -5,6 +5,7 @@ __pycache__/
 my-model/
 # C extensions
 *.so
+fvenv/
 
 # Distribution / packaging
 .Python

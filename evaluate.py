@@ -54,7 +54,7 @@ def evaluate():
 
     print("Loading test data...")
     dataset = load_data(config)
-    test_data = dataset["test"]
+    test_data = dataset[config.test_split]
 
     results = []
     total_em = 0
