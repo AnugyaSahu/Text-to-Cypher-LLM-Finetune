@@ -4,6 +4,7 @@ import streamlit as st
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import Config
 from data import load_data, format_prompt
+from metrics import compute_metrics
 
 
 @st.cache_resource
@@ -48,6 +49,14 @@ def generate_cypher(model, tokenizer, schema, question, config):
     return tokenizer.decode(generated, skip_special_tokens=True).strip()
 
 
+# --- session state init ---
+if "tab1_prediction" not in st.session_state:
+    st.session_state.tab1_prediction = None
+
+if "tab2_examples" not in st.session_state:
+    st.session_state.tab2_examples = None
+
+
 # --- UI ---
 st.title("Text2Cypher Demo")
 st.caption("SmolLM2-135M fine-tuned to generate Cypher queries from natural language")
@@ -67,39 +76,73 @@ with tab1:
         "Question",
         value="Which movies did Christopher Nolan direct before 2010?"
     )
+    ground_truth = st.text_input(
+        "Ground Truth (optional — paste to compare metrics)"
+    )
 
     if st.button("Generate Cypher"):
         with st.spinner("Generating..."):
-            prediction = generate_cypher(model, tokenizer, schema, question, config)
+            st.session_state.tab1_prediction = generate_cypher(
+                model, tokenizer, schema, question, config
+            )
+
+    if st.session_state.tab1_prediction:
         st.subheader("Generated Cypher")
-        st.code(prediction, language="cypher")
+        st.text_area("", value=st.session_state.tab1_prediction, height=120, disabled=True)
+
+        if ground_truth:
+            st.subheader("Metrics")
+            metrics = compute_metrics(st.session_state.tab1_prediction, ground_truth)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Exact Match", "✅" if metrics["exact_match"] else "❌")
+            with col2:
+                st.metric("Token F1", metrics["token_f1"])
 
 # --- Tab 2: Random test examples ---
 with tab2:
     if st.button("Load 3 Random Test Examples"):
         test_data = load_test_data()
         indices = random.sample(range(len(test_data)), 3)
+        results = []
 
-        for i, idx in enumerate(indices):
+        for idx in indices:
             example = test_data[idx]
-            with st.spinner(f"Generating example {i+1}..."):
+            with st.spinner("Generating..."):
                 prediction = generate_cypher(
                     model, tokenizer,
                     example["schema"],
                     example["question"],
                     config
                 )
+            results.append({
+                "schema": example["schema"],
+                "question": example["question"],
+                "ground_truth": example["cypher"],
+                "prediction": prediction,
+                "metrics": compute_metrics(prediction, example["cypher"])
+            })
 
+        st.session_state.tab2_examples = results
+
+    if st.session_state.tab2_examples:
+        for i, ex in enumerate(st.session_state.tab2_examples):
             st.markdown(f"### Example {i+1}")
-            st.markdown(f"**Schema:** `{example['schema']}`")
-            st.markdown(f"**Question:** {example['question']}")
+            st.markdown(f"**Schema:** `{ex['schema']}`")
+            st.markdown(f"**Question:** {ex['question']}")
 
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Ground Truth**")
-                st.code(example["cypher"], language="cypher")
+                st.text_area("", value=ex["ground_truth"], height=120, disabled=True, key=f"gt_{i}")
             with col2:
                 st.markdown("**Predicted**")
-                st.code(prediction, language="cypher")
+                st.text_area("", value=ex["prediction"], height=120, disabled=True, key=f"pred_{i}")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Exact Match", "✅" if ex["metrics"]["exact_match"] else "❌")
+            with col2:
+                st.metric("Token F1", ex["metrics"]["token_f1"])
 
             st.divider()
