@@ -32,13 +32,18 @@ def generate_cypher(model, tokenizer, schema: str, question: str, config: Config
             # cypher queries are short
             max_new_tokens=128,   
             # deterministic output, reproducible results
-            do_sample=False,     
-            pad_token_id=tokenizer.eos_token_id
+            do_sample=False,
+            eos_token_id = tokenizer.eos_token_id
         )
 
     # decode only the newly generated tokens, not the prompt
     generated = outputs[0][inputs["input_ids"].shape[1]:]
-    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+    prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
+    
+    if "### Cypher:" in prediction:
+        prediction = prediction.split("### Cypher:")[0].strip()
+
+    return prediction
 
 
 def evaluate():

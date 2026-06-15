@@ -1,7 +1,5 @@
-
 from dataclasses import dataclass
 
-# dataclass because cleaner than a dict and more structured, also allows for type hints and default values
 @dataclass
 class Config:
     # Model
@@ -18,11 +16,11 @@ class Config:
     learning_rate: float = 2e-4
     num_epochs: int = 5
     batch_size: int = 8
-    max_length: int = 512   
+    max_length: int = 1024
 
     # M2 GPU
-    torch_threads: int = 4
-    device: str = "cuda"   
+    torch_threads: int = 8
+    device: str = "cuda"
 
     # Output
     output_dir: str = "./my-model"

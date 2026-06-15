@@ -42,11 +42,17 @@ def generate_cypher(model, tokenizer, schema, question, config):
             **inputs,
             max_new_tokens=128,
             do_sample=False,
-            pad_token_id=tokenizer.eos_token_id
+            eos_token_id = tokenizer.eos_token_id
         )
 
     generated = outputs[0][inputs["input_ids"].shape[1]:]
-    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+
+    prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
+    
+    if "### Cypher:" in prediction:
+        prediction = prediction.split("### Cypher:")[0].strip()
+
+    return prediction
 
 
 # --- session state init ---
