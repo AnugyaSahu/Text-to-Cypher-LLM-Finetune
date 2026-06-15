@@ -25,7 +25,7 @@ def format_prompt(example):
 def tokenize(example, tokenizer, config: Config):
     """
     Tokenizes the input text using the provided tokenizer.
-    It truncates the text to the maximum length specified in the config (CPU optimization)
+    It truncates the text to the maximum length specified in the config
     """
     return tokenizer(
         example["text"],

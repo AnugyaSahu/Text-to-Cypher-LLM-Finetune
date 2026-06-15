@@ -88,7 +88,13 @@ with tab1:
 
     if st.session_state.tab1_prediction:
         st.subheader("Generated Cypher")
-        st.text_area("", value=st.session_state.tab1_prediction, height=120, disabled=True)
+        st.text_area(
+            "Generated Cypher Output",
+            value=st.session_state.tab1_prediction,
+            height=120,
+            disabled=True,
+            label_visibility="collapsed"
+        )
 
         if ground_truth:
             st.subheader("Metrics")
@@ -101,7 +107,17 @@ with tab1:
 
 # --- Tab 2: Random test examples ---
 with tab2:
-    if st.button("Load 3 Random Test Examples"):
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        load_clicked = st.button("Load 3 Random Test Examples")
+    with col2:
+        refresh_clicked = st.button("🔄 Refresh Examples")
+
+    if refresh_clicked:
+        st.session_state.tab2_examples = None
+        st.rerun()
+
+    if load_clicked and st.session_state.tab2_examples is None:
         test_data = load_test_data()
         indices = random.sample(range(len(test_data)), 3)
         results = []
@@ -134,10 +150,24 @@ with tab2:
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Ground Truth**")
-                st.text_area("", value=ex["ground_truth"], height=120, disabled=True, key=f"gt_{i}")
+                st.text_area(
+                    f"Ground Truth {i}",
+                    value=ex["ground_truth"],
+                    height=120,
+                    disabled=True,
+                    label_visibility="collapsed",
+                    key=f"gt_{i}"
+                )
             with col2:
                 st.markdown("**Predicted**")
-                st.text_area("", value=ex["prediction"], height=120, disabled=True, key=f"pred_{i}")
+                st.text_area(
+                    f"Predicted {i}",
+                    value=ex["prediction"],
+                    height=120,
+                    disabled=True,
+                    label_visibility="collapsed",
+                    key=f"pred_{i}"
+                )
 
             col1, col2 = st.columns(2)
             with col1:

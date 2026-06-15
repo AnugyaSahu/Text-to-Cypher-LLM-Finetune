@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class Config:
     # Model
     model_name: str = "HuggingFaceTB/SmolLM2-135M-Instruct"
-    hub_model_name: str = "Anugya/text2cypher-smollm2"  # change this
+    hub_model_name: str = "Anugya/text2cypher-smollm2"
 
     # Dataset
     dataset_name: str = "RomanTeucher/text2cypher-curated"
@@ -16,13 +16,13 @@ class Config:
 
     # Training
     learning_rate: float = 2e-4
-    num_epochs: int = 3
-    batch_size: int = 4
-    # Cypher queries are short, long sequences can cause out of memory errors
-    max_length: int = 256      
+    num_epochs: int = 5
+    batch_size: int = 8
+    max_length: int = 512     # increase for complex schemas
 
-    # CPU optimization to not freeze the system during training
-    torch_threads: int = 4    
+    # M2 GPU
+    torch_threads: int = 4
+    device: str = "mps"        # use M2 GPU instead of CPU
 
     # Output
     output_dir: str = "./my-model"

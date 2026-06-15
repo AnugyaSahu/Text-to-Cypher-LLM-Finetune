@@ -5,7 +5,7 @@ from transformers import (
     AutoTokenizer,
     TrainingArguments,
     Trainer,
-    # Data collator to dynamically pad sequences in each batch (CPU optimization)
+    # Data collator to dynamically pad sequences in each batch (optimization)
     DataCollatorForLanguageModeling
 )
 from config import Config
@@ -13,16 +13,22 @@ from data import get_tokenized_dataset
 
 def setup_torch(config: Config):
     """Sets the number of threads for PyTorch to use, based on the config.
-        This is a CPU optimization to prevent freezing during training."""
+        This is a   optimization to prevent freezing during training."""
     torch.set_num_threads(config.torch_threads)
+
+import os
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 def load_model(config: Config):
     """Loads the pre-trained model from Hugging Face Transformers library"""
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name,
-        dtype=torch.float32,  #float32 for CPU training (CPU optimization)
+        dtype=torch.float16,
     )
+    model = model.to("mps")
+    print(f"Model device: {next(model.parameters()).device}")
     return model
+
 
 def get_training_args(config: Config):
     return TrainingArguments(
@@ -38,14 +44,13 @@ def get_training_args(config: Config):
         # if training overfits, load the best model at the end 
         load_best_model_at_end=True,
         logging_steps=50,
-        fp16=False,    
-        use_cpu=True # just CPU training, no GPU
+        bf16=True,
     )
 
 def train():
     """Main training function that orchestrates the entire training process:
     1. Loads the configuration
-    2. Sets up PyTorch for CPU optimization
+    2. Sets up PyTorch for   optimization
     3. Loads and tokenizes the dataset
     4. Loads the pre-trained model
     5. Sets up the Trainer and starts training
@@ -62,7 +67,7 @@ def train():
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False,  #doing causal language modeling
-        # padding automatically dynamically per batch to save memory (CPU optimization)
+        # padding automatically dynamically per batch to save memory 
     )
 
     trainer = Trainer(
