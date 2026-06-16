@@ -7,3 +7,5 @@ streamlit
 torchvision
 google-generativeai
 python-dotenv 
+trl
+openai
