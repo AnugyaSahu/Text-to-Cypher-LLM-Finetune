@@ -82,6 +82,11 @@ python llm_judge.py --predictions results/predictions.json
 # judge DPO predictions
 python llm_judge.py --predictions results/dpo_predictions.json --output results/llm_judge_dpo.json
 ```
+Results saved to `results/llm_judge_results.json` with per-sample scores and explanations.
+
+### Why this matters
+
+Token F1 misses semantically equivalent queries — `WHERE m.year < 2010` vs `WHERE 2010 > m.year` scores 0 on Token F1 but should pass. LLM judge catches this. The **Would Return Same Results** metric is the closest approximation to execution accuracy without needing a live Neo4j database.
 
 ## Demo App
 
