@@ -5,3 +5,5 @@ huggingface_hub
 accelerate
 streamlit
 torchvision
+google-generativeai
+python-dotenv 
