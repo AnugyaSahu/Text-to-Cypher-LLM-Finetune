@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import torch
 
 @dataclass
 class Config:
@@ -18,10 +19,10 @@ class Config:
     batch_size: int = 8
     max_length: int = 1024
 
-    # M2 GPU
+    # M2 GPU or cuda
     torch_threads: int = 8
-    device: str = "cuda"
+    device: str = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
     # Output
-    output_dir: str = "./my-model"
-    results_path: str = "./results/predictions.json"
+    output_dir: str = "my-model"
+    results_path: str = "results/predictions.json"

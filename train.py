@@ -25,7 +25,7 @@ def load_model(config: Config):
         config.model_name,
         dtype=torch.float32,
     )
-    model = model.to("cuda")
+    model = model.to(config.device)
     print(f"Model device: {next(model.parameters()).device}")
     return model
 

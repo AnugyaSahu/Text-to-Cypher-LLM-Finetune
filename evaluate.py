@@ -51,8 +51,8 @@ def evaluate():
     torch.set_num_threads(config.torch_threads)
 
     print("Loading model...")
-    model = AutoModelForCausalLM.from_pretrained(config.output_dir)
-    tokenizer = AutoTokenizer.from_pretrained(config.output_dir)
+    model = AutoModelForCausalLM.from_pretrained(config.hub_model_name)
+    tokenizer = AutoTokenizer.from_pretrained(config.hub_model_name)
     tokenizer.pad_token = tokenizer.eos_token
     # inference mode, no need to compute gradients
     model.eval()                 
