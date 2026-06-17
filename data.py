@@ -10,11 +10,11 @@ def load_data(config: Config):
 def format_prompt(example, eos_token=""):
     return {
         "text": f"""### Schema:
-            {example['schema']}
-            ### Question:
-            {example['question']}
-            ### Cypher:
-            {example['cypher']}{eos_token}"""
+{example['schema']}
+### Question:
+{example['question']}
+### Cypher:
+{example['cypher']}{eos_token}"""
     }
 
 def tokenize(example, tokenizer, config: Config):
