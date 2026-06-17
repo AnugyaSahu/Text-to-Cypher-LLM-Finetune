@@ -1,17 +1,36 @@
 # Text-to-Cypher-LLM-Finetune
 Finetuning a small LLM to generate Cypher queries from a natural language question and a graph schema.
 
-## Setup
+## Setup & Run
 
+### 1. Create Virtual Environment
 ```bash
-git clone https://github.com/AnugyaSahu/Text-to-Cypher-LLM-Finetune
-cd Text-to-Cypher-LLM-Finetune
+python3 -m venv fvenv
+```
+
+### 2. Activate Virtual Environment
+**Mac/Linux:**
+```bash
+source fvenv/bin/activate
+```
+**Windows:**
+```bash
+fvenv\Scripts\activate
+```
+
+### 3. Install Requirements
+```bash
 pip install -r requirements.txt
+```
+
+### 4. Run the App
+```bash
+streamlit run app.py
 ```
 
 Login to HuggingFace:
 ```bash
-huggingface-cli login
+hf auth login
 ```
 
 ## Reproduce
@@ -22,22 +41,22 @@ python train.py
 ```
 
 **Evaluate:**
+
+Per sample evaluation on Exact Match and Token F1 metric
+Needs hugging face login
+
 ```bash
 python evaluate.py
 ```
 Results will be saved to `results/predictions.json`
 
 **LLM Judge (SFT):**
+
+ChatGPT 4o mini used to judge the structure 
+
 ```bash
 python llm_judge.py --predictions results/predictions.json
 ```
-
-**LLM Judge (DPO):**
-```bash
-python llm_judge.py --predictions results/dpo_predictions.json --output results/llm_judge_dpo.json
-```
-
-LLM judge results will be saved to `results/llm_judge_results.json`
 
 ## Metrics
 
@@ -62,16 +81,15 @@ To get richer evaluation beyond Token F1, we use **Gemini Flash as a judge**. Fo
 
 This catches cases Token F1 misses — semantically equivalent queries, minor formatting differences, and structural errors that still score high on token overlap.
 
-**Setup:**
+**Setup for llm judge:**
 
 Create a `.env` file:
 
-GEMINI_API_KEY=your-gemini-api-key-here
-
-Get a free API key from [aistudio.google.com](https://aistudio.google.com)
+OPENAI_API_KEY=your-openai-api-key-here
+Get an API key from platform.openai.com
 
 ```bash
-pip install google-generativeai python-dotenv
+pip install openai python-dotenv
 ```
 
 **Run:**
@@ -79,8 +97,6 @@ pip install google-generativeai python-dotenv
 # judge SFT predictions
 python llm_judge.py --predictions results/predictions.json
 
-# judge DPO predictions
-python llm_judge.py --predictions results/dpo_predictions.json --output results/llm_judge_dpo.json
 ```
 Results saved to `results/llm_judge_results.json` with per-sample scores and explanations.
 
