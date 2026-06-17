@@ -5,45 +5,8 @@ import os
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import Config
-from data import load_data, format_prompt
+from data import load_data, format_prompt, generate_cypher
 from metrics import compute_metrics
-
-
-def generate_cypher(model, tokenizer, schema: str, question: str, config: Config) -> str:
-    """Generates a Cypher query given the schema and question using the fine-tuned model.
-    — model learned from this exact format, changing it would confuse it at inference time
-    """
-    example = {"schema": schema, "question": question, "cypher": ""}
-    prompt = format_prompt(example)["text"]
-    
-    # remove the empty cypher part, we want model to generate it
-    prompt = prompt.split("### Cypher:")[0] + "### Cypher:"
-
-    inputs = tokenizer(
-        prompt,
-        return_tensors="pt",
-        truncation=True,
-        max_length=config.max_length
-    )
-    # no gradient needed at inference, saves memory
-    with torch.no_grad():        
-        outputs = model.generate(
-            **inputs,
-            # cypher queries are short
-            max_new_tokens=128,   
-            # deterministic output, reproducible results
-            do_sample=False,
-            eos_token_id = tokenizer.eos_token_id
-        )
-
-    # decode only the newly generated tokens, not the prompt
-    generated = outputs[0][inputs["input_ids"].shape[1]:]
-    prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
-    
-    if "### Cypher:" in prediction:
-        prediction = prediction.split("### Cypher:")[0].strip()
-
-    return prediction
 
 
 def evaluate():

@@ -1,5 +1,6 @@
 from datasets import load_dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, StoppingCriteria, StoppingCriteriaList
+import torch
 from config import Config
 
 def load_data(config: Config):
@@ -26,7 +27,6 @@ def tokenize(example, tokenizer, config: Config):
         example["text"],
         truncation=True,
         max_length=config.max_length,
-        # Efficient to pad each batch during training (Dynamic padding)
         padding=False,
     )
 
@@ -42,3 +42,36 @@ def get_tokenized_dataset(config: Config):
     dataset = load_data(config).map(lambda x: tokenize(format_prompt(x, tokenizer.eos_token), tokenizer, config))
 
     return dataset, tokenizer
+
+class NewlineStoppingCriteria(StoppingCriteria):
+    def __init__(self, tokenizer):
+        self.newline_id = tokenizer.encode("\n", add_special_tokens=False)[0]
+    
+    def __call__(self, input_ids, scores, **kwargs):
+        return input_ids[0][-1] == self.newline_id
+
+def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str:
+    example = {"schema": schema, "question": question, "cypher": ""}
+    prompt = format_prompt(example)["text"]
+    prompt = prompt.split("### Cypher:")[0] + "### Cypher:"
+
+    inputs = tokenizer(
+        prompt,
+        return_tensors="pt",
+        truncation=True,
+        max_length=config.max_length
+    )
+
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=128,
+            do_sample=False,
+            eos_token_id=tokenizer.eos_token_id,
+            stopping_criteria=StoppingCriteriaList([NewlineStoppingCriteria(tokenizer)])
+        )
+
+    generated = outputs[0][inputs["input_ids"].shape[1]:]
+    prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
+
+    return prediction

@@ -3,7 +3,7 @@ import random
 import streamlit as st
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import Config
-from data import load_data, format_prompt
+from data import load_data, format_prompt, generate_cypher
 from metrics import compute_metrics
 
 
