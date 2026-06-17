@@ -5,17 +5,17 @@ Finetuning a small LLM to generate Cypher queries from a natural language questi
 
 ### 1. Create Virtual Environment
 ```bash
-python3 -m venv venv
+python3 -m venv fvenv
 ```
 
 ### 2. Activate Virtual Environment
 **Mac/Linux:**
 ```bash
-source venv/bin/activate
+source fvenv/bin/activate
 ```
 **Windows:**
 ```bash
-venv\Scripts\activate
+fvenv\Scripts\activate
 ```
 
 ### 3. Install Requirements
