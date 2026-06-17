@@ -25,36 +25,6 @@ def load_test_data():
     return dataset[config.test_split]
 
 
-def generate_cypher(model, tokenizer, schema, question, config):
-    example = {"schema": schema, "question": question, "cypher": ""}
-    prompt = format_prompt(example)["text"]
-    prompt = prompt.split("### Cypher:")[0] + "### Cypher:"
-
-    inputs = tokenizer(
-        prompt,
-        return_tensors="pt",
-        truncation=True,
-        max_length=config.max_length
-    )
-
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=128,
-            do_sample=False,
-            eos_token_id = tokenizer.eos_token_id
-        )
-
-    generated = outputs[0][inputs["input_ids"].shape[1]:]
-
-    prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
-    
-    if "### Cypher:" in prediction:
-        prediction = prediction.split("### Cypher:")[0].strip()
-
-    return prediction
-
-
 # --- session state init ---
 if "tab1_prediction" not in st.session_state:
     st.session_state.tab1_prediction = None
