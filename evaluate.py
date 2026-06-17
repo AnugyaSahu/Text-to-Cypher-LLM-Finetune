@@ -1,11 +1,9 @@
-# evaluate.py
-
 import json
 import os
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import Config
-from data import load_data, format_prompt, generate_cypher
+from data import load_data, generate_cypher
 from metrics import compute_metrics
 
 
@@ -14,9 +12,10 @@ def evaluate():
     torch.set_num_threads(config.torch_threads)
 
     print("Loading model...")
+    # after training , push the model to hub then pull and evaluate
     model = AutoModelForCausalLM.from_pretrained(config.hub_model_name)
     tokenizer = AutoTokenizer.from_pretrained(config.hub_model_name)
-    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token = tokenizer.eos_token # model has no pad token by default
     # inference mode, no need to compute gradients
     model.eval()                 
 
@@ -25,8 +24,8 @@ def evaluate():
     test_data = dataset[config.test_split]
 
     results = []
-    total_em = 0
-    total_f1 = 0
+    total_em = 0 # exact match
+    total_f1 = 0 # TokenF1
 
     for i, example in enumerate(test_data):
         print(f"Sample {i+1}/{len(test_data)}")
@@ -42,7 +41,7 @@ def evaluate():
         total_em += metrics["exact_match"]
         total_f1 += metrics["token_f1"]
 
-        # per sample result
+        # per sample result saved to json 
         results.append({
             "question": example["question"],
             "schema": example["schema"],
@@ -63,7 +62,7 @@ def evaluate():
         "samples": results
     }
 
-    # write to JSON
+    # write to JSON, create result folder
     os.makedirs("results", exist_ok=True)
     with open(config.results_path, "w") as f:
         json.dump(summary, f, indent=2)

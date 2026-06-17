@@ -2,8 +2,9 @@ import torch
 from transformers import (
     # SmolLM2 is a causal language model (predicts next token based on previous tokens)
     AutoModelForCausalLM, 
-    AutoTokenizer,
+    # config objects for trainer, keep training settings seperate from model code
     TrainingArguments,
+    # HF's built in training loop
     Trainer,
     # Data collator to dynamically pad sequences in each batch (optimization)
     DataCollatorForLanguageModeling
@@ -17,13 +18,13 @@ def setup_torch(config: Config):
     torch.set_num_threads(config.torch_threads)
 
 import os
-os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1" # mps not supported operations , fallback to cpu
 
 def load_model(config: Config):
     """Loads the pre-trained model from Hugging Face Transformers library"""
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name,
-        dtype=torch.float32,
+        dtype=torch.float32, # full precision
     )
     model = model.to(config.device)
     print(f"Model device: {next(model.parameters()).device}")
@@ -43,8 +44,8 @@ def get_training_args(config: Config):
         save_strategy="epoch",   
         # if training overfits, load the best model at the end 
         load_best_model_at_end=True,
-        logging_steps=50,
-        fp16=False,
+        logging_strategy="epoch",
+        fp16=False, # can be put to True for faster training
     )
 
 def train():
@@ -66,8 +67,8 @@ def train():
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
-        mlm=False,  #doing causal language modeling
-        # padding automatically dynamically per batch to save memory 
+        mlm=False,  #doing causal language modeling, shifts input by 1 for next token pred automatically
+        # mlm = True for BERT style masked training (masked language modelling)
     )
 
     trainer = Trainer(

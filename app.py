@@ -9,6 +9,7 @@ from metrics import compute_metrics
 
 @st.cache_resource
 def load_model():
+    # loads once and reuses across all users reruns
     config = Config()
     torch.set_num_threads(config.torch_threads)
     model = AutoModelForCausalLM.from_pretrained(config.hub_model_name)
@@ -20,12 +21,12 @@ def load_model():
 
 @st.cache_data
 def load_test_data():
+    # loads once the dataset, cached
     config = Config()
     dataset = load_data(config)
     return dataset[config.test_split]
 
-
-# --- session state init ---
+# preserves predictions between reruns
 if "tab1_prediction" not in st.session_state:
     st.session_state.tab1_prediction = None
 
@@ -33,7 +34,7 @@ if "tab2_examples" not in st.session_state:
     st.session_state.tab2_examples = None
 
 
-# --- UI ---
+# UI
 st.title("Text2Cypher Demo")
 st.caption("SmolLM2-135M fine-tuned to generate Cypher queries from natural language")
 
@@ -41,7 +42,7 @@ model, tokenizer, config = load_model()
 
 tab1, tab2 = st.tabs(["Try it yourself", "Test set examples"])
 
-# --- Tab 1: Custom input ---
+# Tab 1 - Custom input 
 with tab1:
     schema = st.text_area(
         "Graph Schema",
@@ -81,7 +82,7 @@ with tab1:
             with col2:
                 st.metric("Token F1", metrics["token_f1"])
 
-# --- Tab 2: Random test examples ---
+# Tab 2: Random test examples from the dataset
 with tab2:
     col1, col2 = st.columns([1, 1])
     with col1:
@@ -100,7 +101,7 @@ with tab2:
 
         for idx in indices:
             example = test_data[idx]
-            with st.spinner("Generating..."):
+            with st.spinner("Generating..."): # user feedback for something happening
                 prediction = generate_cypher(
                     model, tokenizer,
                     example["schema"],
@@ -131,8 +132,8 @@ with tab2:
                     value=ex["ground_truth"],
                     height=120,
                     disabled=True,
-                    label_visibility="collapsed",
-                    key=f"gt_{i}"
+                    label_visibility="collapsed", 
+                    key=f"gt_{i}" # unique keys required for widgets in loops
                 )
             with col2:
                 st.markdown("**Predicted**")

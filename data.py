@@ -9,6 +9,7 @@ def load_data(config: Config):
     return dataset
 
 def format_prompt(example, eos_token=""):
+    # eos token so model learns when to stop, default empty so it works on inference too
     return {
         "text": f"""### Schema:
 {example['schema']}
@@ -27,6 +28,7 @@ def tokenize(example, tokenizer, config: Config):
         example["text"],
         truncation=True,
         max_length=config.max_length,
+        # padding happens dynaically by batches in training
         padding=False,
     )
 
@@ -44,6 +46,7 @@ def get_tokenized_dataset(config: Config):
     return dataset, tokenizer
 
 class NewlineStoppingCriteria(StoppingCriteria):
+    # cypher queries are single line, force stopping at new line 
     def __init__(self, tokenizer):
         self.newline_id = tokenizer.encode("\n", add_special_tokens=False)[0]
     
@@ -62,15 +65,18 @@ def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str
         max_length=config.max_length
     )
 
+    # inference does not need gradients
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
             max_new_tokens=128,
+            # for deterministic outputs
             do_sample=False,
             eos_token_id=tokenizer.eos_token_id,
             stopping_criteria=StoppingCriteriaList([NewlineStoppingCriteria(tokenizer)])
         )
 
+    # model returns prompt+generated, slice and decode only newly generated tokens
     generated = outputs[0][inputs["input_ids"].shape[1]:]
     prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
 

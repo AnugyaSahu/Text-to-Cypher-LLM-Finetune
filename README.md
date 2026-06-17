@@ -122,29 +122,39 @@ Schema: `Movie {title, year}, Person {name}, (Person)-[:DIRECTED]->(Movie)`
 Question: `Which movies did Christopher Nolan direct before 2010?`  
 Generated: `MATCH (p:Person {name: 'Christopher Nolan'})-[:DIRECTED]->(m:Movie) WHERE m.year < 2010 RETURN m.title`
 
-## Design Decisions and Limitations
+## Design Decisions
 
-**Full fine-tune over LoRA:**
-SmolLM2 is 135M params — small enough for full fine-tune on CPU without memory issues. LoRA adds complexity without clear benefit at this scale.
+**Full Fine-tune over LoRA**
+LoRA is designed for large models (7B+) where full fine-tune is infeasible. SmolLM2 at 135M params is small enough to fully fine-tune on a single GPU in 21 minutes. Full fine-tune lets every weight adapt to the Cypher generation task. LoRA adds complexity around rank selection and adapter merging without any memory benefit at this scale.
 
-**Prompt format:**
-Used instruction-style format matching SmolLM2-Instruct's pretraining format:
-Schema:
-Question:
-Cypher:
+**SmolLM2-Instruct**
+The Instruct variant already understands structured prompt formats from pretraining. Our Schema, Question, Cypher format aligns with this so we leverage existing instruction following capability rather than teaching prompt structure from scratch.
 
-Matching the expected format leverages pretraining and gives better results.
+**Max length 1024**
+Complex graph schemas alone consume 500+ tokens. Lower values truncate the schema mid-way and lose node and relationship information that is critical for generating correct queries.
 
-**Max length:**
-Set to 1024 tokens after finding that complex schemas alone consume 500+ tokens. Increasing from 256 to 1024 improved Token F1 from 0.41 to 0.64.
+**Deterministic generation**
+Cypher generation is a deterministic task so sampling introduces randomness that hurts reliability. Greedy decoding ensures the same question always gives the same query, making evaluation reproducible and consistent.
 
-**Deterministic generation:**
-Used `do_sample=False` for reproducibility — same input always gives same output, making evaluation reliable.
+**Dynamic padding**
+Padding all sequences to max length upfront wastes memory. Dynamic padding per batch reduces memory usage significantly and speeds up training without affecting model quality.
 
-**Post-processing:**
-Model sometimes repeats the prompt template after generating the query. Added a post-processing step to strip everything after `### Cypher:` appears in the output.
+**Metrics: Exact Match and Token F1 over BLEU**
+BLEU measures n-gram order and is designed for natural language where word order matters. Cypher order often does not since `WHERE a=1 AND b=2` is identical to `WHERE b=2 AND a=1`. Token F1 with sets ignores order and measures token overlap which is more appropriate for structured query language.
 
-**Limitations:**
-- 135M model learns Cypher syntax patterns but not semantic reasoning
-- No query execution validation against a real Neo4j database
-- Model struggles with complex multi-hop queries and unseen schema structures
+**LLM as a Judge**
+Token F1 and Exact Match compare strings not semantics. Two queries can be written differently but return identical results from the database. GPT-4o-mini evaluates structural correctness, semantic equivalence, and whether queries would return the same results which is the closest approximation to execution accuracy without a live Neo4j database.
+
+## Limitations
+
+**Model capacity**
+135M parameters is small for a code generation task. The model learns common Cypher patterns well but struggles with complex multi-hop queries and schema structures it has not seen during training.
+
+**No execution validation**
+The gold standard for text-to-query tasks is execution accuracy where you run both queries against a real database and compare results. Without a live Neo4j database we approximate this with the LLM judge but it is not the same thing.
+
+**Generation stopping**
+The model does not reliably generate an EOS token so it requires an explicit stopping strategy at inference time. The proper fix requires retraining with an explicit end marker in the prompt format.
+
+**Dataset bias**
+Trained on a single curated dataset, the model is biased toward the schema patterns and query styles present in that data. It may generalize poorly to different graph domains or naming conventions.

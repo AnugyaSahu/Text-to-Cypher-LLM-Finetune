@@ -6,7 +6,10 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from metrics import compute_metrics
 
+# Loads predictions from evaluate.py output predictions.json
+# GPT 4o mini used to evaluate predictions 
 
+# prompt engineering , temperature = 0 = no randomness, deterministic output
 JUDGE_PROMPT = """You are an expert in Neo4j Cypher query language.
 
 You will be given:
@@ -33,6 +36,15 @@ Return this exact JSON format:
   "explanation": "<one sentence>"
 }}"""
 
+# structural_correctness — is the Cypher syntax valid? (0-10)
+# semantic_equivalence — does it mean the same thing? (0-10)
+# would_return_same_results — would it return same data from Neo4j? (true/false) for e.g.
+
+"""-- Query 1
+MATCH (c:Character) WHERE c.name = 'Jon' RETURN c
+
+-- Query 2  
+MATCH (c:Character {name: 'Jon'}) RETURN c"""
 
 def judge_single(client, schema, question, ground_truth, prediction):
     prompt = JUDGE_PROMPT.format(
@@ -62,7 +74,7 @@ def judge_single(client, schema, question, ground_truth, prediction):
     except Exception as e:
         print(f"Judge error: {e}")
         return {
-            "structural_correctness": 0,
+            "structural_correctness": 0, 
             "semantic_equivalence": 0,
             "would_return_same_results": False,
             "explanation": f"Error: {str(e)}"
@@ -71,7 +83,7 @@ def judge_single(client, schema, question, ground_truth, prediction):
 
 def run_llm_judge(predictions_path: str, api_key: str, output_path: str = "results/llm_judge_results.json"):
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key) # in .env 
 
     # load predictions
     with open(predictions_path, "r") as f:
@@ -85,6 +97,7 @@ def run_llm_judge(predictions_path: str, api_key: str, output_path: str = "resul
     total_semantic = 0
     total_same_results = 0
 
+    # per sample json file
     for i, sample in enumerate(samples):
         print(f"Sample {i+1}/{len(samples)}")
 
@@ -119,6 +132,7 @@ def run_llm_judge(predictions_path: str, api_key: str, output_path: str = "resul
         # sleep to avoid rate limiting
         time.sleep(1)
 
+    # Aggregation
     n = len(samples)
     summary = {
         "aggregate": {
@@ -151,6 +165,7 @@ if __name__ == "__main__":
     if not API_KEY:
         raise ValueError("OPENAI_API_KEY not found in .env file")
 
+    # run in terminal with custom paths
     parser = argparse.ArgumentParser()
     parser.add_argument("--predictions", type=str, default="results/predictions.json")
     parser.add_argument("--output", type=str, default="results/llm_judge_results.json")
