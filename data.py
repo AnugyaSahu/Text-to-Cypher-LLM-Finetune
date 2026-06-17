@@ -1,5 +1,5 @@
 from datasets import load_dataset
-from transformers import AutoTokenizer, StoppingCriteria, StoppingCriteriaList
+from transformers import AutoTokenizer
 import torch
 from config import Config
 
@@ -45,14 +45,6 @@ def get_tokenized_dataset(config: Config):
 
     return dataset, tokenizer
 
-class NewlineStoppingCriteria(StoppingCriteria):
-    # cypher queries are single line, force stopping at new line 
-    def __init__(self, tokenizer):
-        self.newline_id = tokenizer.encode("\n", add_special_tokens=False)[0]
-    
-    def __call__(self, input_ids, scores, **kwargs):
-        return input_ids[0][-1] == self.newline_id
-
 def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str:
     example = {"schema": schema, "question": question, "cypher": ""}
     prompt = format_prompt(example)["text"]
@@ -73,7 +65,6 @@ def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str
             # for deterministic outputs
             do_sample=False,
             eos_token_id=tokenizer.eos_token_id,
-            stopping_criteria=StoppingCriteriaList([NewlineStoppingCriteria(tokenizer)])
         )
 
     # model returns prompt+generated, slice and decode only newly generated tokens
