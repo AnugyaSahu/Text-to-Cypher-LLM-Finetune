@@ -9,14 +9,14 @@ def load_data(config: Config):
     return dataset
 
 def format_prompt(example, eos_token=""):
-    # eos token so model learns when to stop, default empty so it works on inference too
     return {
         "text": f"""### Schema:
 {example['schema']}
 ### Question:
 {example['question']}
 ### Cypher:
-{example['cypher']}{eos_token}"""
+{example['cypher']}
+### End{eos_token}"""
     }
 
 def tokenize(example, tokenizer, config: Config):
@@ -69,6 +69,10 @@ def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str
 
     # model returns prompt+generated, slice and decode only newly generated tokens
     generated = outputs[0][inputs["input_ids"].shape[1]:]
+    # converts generated token IDs back to clean text, removing special tokens and whitespace
     prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
+
+    if "### End" in prediction:
+        prediction = prediction.split("### End")[0].strip()
 
     return prediction
