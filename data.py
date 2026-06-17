@@ -64,7 +64,6 @@ def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str
             # for deterministic outputs
             do_sample=False,
             eos_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.5,
         )
 
     # model returns prompt+generated, slice and decode only newly generated tokens
