@@ -60,7 +60,7 @@ def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=128,
+            max_new_tokens=96,
             # for deterministic outputs
             do_sample=False,
             eos_token_id=tokenizer.eos_token_id,

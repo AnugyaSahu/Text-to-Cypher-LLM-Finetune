@@ -17,7 +17,7 @@ class Config:
 
     # Training
     learning_rate: float = 2e-4 # standard
-    num_epochs: int = 5 
+    num_epochs: int = 6 
     batch_size: int = 8 
     max_length: int = 1024 # some queries are large, no truncation
 

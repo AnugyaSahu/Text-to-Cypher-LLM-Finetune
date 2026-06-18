@@ -45,7 +45,7 @@ def get_training_args(config: Config):
         # if training overfits, load the best model at the end 
         load_best_model_at_end=True,
         logging_strategy="epoch",
-        fp16=False, # can be put to True for faster training
+        fp16=True, # can be put to True for faster training
     )
 
 def train():
