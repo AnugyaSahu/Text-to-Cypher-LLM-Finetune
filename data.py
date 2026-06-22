@@ -10,11 +10,13 @@ def load_data(config: Config):
 
 def format_prompt(example, eos_token=""):
     return {
-        "text": f"""### Schema:
+        "text": f"""<|im_start|>user
+### Schema:
 {example['schema']}
 ### Question:
 {example['question']}
-### Cypher:
+<|im_end|>
+<|im_start|>assistant
 {example['cypher']}{eos_token}"""
     }
 
@@ -47,7 +49,7 @@ def get_tokenized_dataset(config: Config):
 def generate_cypher(model, tokenizer, schema: str, question: str, config) -> str:
     example = {"schema": schema, "question": question, "cypher": ""}
     prompt = format_prompt(example)["text"]
-    prompt = prompt.split("### Cypher:")[0] + "### Cypher:"
+    prompt = prompt.split("<|im_start|>assistant\n")[0] + "<|im_start|>assistant\n"
 
     inputs = tokenizer(
         prompt,
